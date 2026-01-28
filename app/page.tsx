@@ -21,14 +21,6 @@ export default function DashboardPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const router = useRouter()
 
-  const fetchFeedbacks = async () => {
-    const { data } = await supabase
-      .from('feedback')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setFeedbacks(data)
-  }
-
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser()
@@ -38,11 +30,45 @@ export default function DashboardPage() {
       }
 
       setUserId(data.user.id)
-      await fetchFeedbacks()
+
+      const { data: feedbackData } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (feedbackData) setFeedbacks(feedbackData)
       setLoading(false)
     }
 
     init()
+
+    const channel = supabase
+      .channel('feedback-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'feedback' },
+        (payload) => {
+          const newFeedback = payload.new as Feedback
+          setFeedbacks((prev) => [newFeedback, ...prev])
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'feedback' },
+        (payload) => {
+          const updated = payload.new as Feedback
+          setFeedbacks((prev) =>
+            prev.map((item) =>
+              item.id === updated.id ? updated : item
+            )
+          )
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [router])
 
   const handleSubmit = async () => {
@@ -57,9 +83,9 @@ export default function DashboardPage() {
       title,
       description,
     })
+
     setTitle('')
     setDescription('')
-    fetchFeedbacks()
   }
 
 
