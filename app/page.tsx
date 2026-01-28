@@ -1,65 +1,132 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useEffect, useState } from 'react'
+import { supabase } from './lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+type Feedback = {
+  id: string
+  title: string
+  description: string
+  status: string
+  category: string | null
+  priority: string | null
+}
+
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
+  const router = useRouter()
+
+  const fetchFeedbacks = async () => {
+    const { data } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setFeedbacks(data)
+  }
+
+  useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!data.user) {
+        router.push('/login')
+        return
+      }
+
+      setUserId(data.user.id)
+      await fetchFeedbacks()
+      setLoading(false)
+    }
+
+    init()
+  }, [router])
+
+  const handleSubmit = async () => {
+    if (!userId) return
+    if (!title || !description) {
+      alert('Title and description are required')
+      return
+    }
+
+    await supabase.from('feedback').insert({
+      user_id: userId,
+      title,
+      description,
+    })
+    setTitle('')
+    setDescription('')
+    fetchFeedbacks()
+  }
+
+
+  if (loading) return <p className="loading">Loading...</p>
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="container">
+      <div className="dashboard-container">
+        <div className="card header-card">
+          <div>
+            <h1>Feedback Dashboard</h1>
+            <p className="header-subtitle">Track and manage your submitted feedback.</p>
+          </div>
+          <button
+            className="logout-btn"
+            onClick={async () => {
+              await supabase.auth.signOut()
+              router.push('/login')
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Logout
+          </button>
         </div>
-      </main>
+
+        <div className="card">
+          <h2>Submit Feedback</h2>
+          <input
+            className="input"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            className="textarea"
+            placeholder="Describe your feedback"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <button
+            className="primary-btn"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+        </div>
+
+        <div className="card">
+          <h2>Your Feedback</h2>
+
+          {feedbacks.length === 0 && (
+            <p className="empty-text">No feedback yet. Start by submitting one above.</p>
+          )}
+
+          {feedbacks.map((fb) => (
+            <div key={fb.id} className="feedback-item">
+              <p className="feedback-title">{fb.title}</p> 
+              <p className="feedback-status"> Status: <span>{fb.status}</span> </p>
+
+              {fb.status === 'Processed' && (
+                <p className="feedback-meta">
+                  {fb.category} · {fb.priority}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  );
+  )
 }
