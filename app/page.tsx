@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -20,6 +20,16 @@ export default function DashboardPage() {
   const [description, setDescription] = useState('')
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const router = useRouter()
+  
+  const fetchFeedbacks = useCallback(async () => {
+    if (!userId) return
+    const { data } = await supabase
+      .from('feedback')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (data) setFeedbacks(data)
+  }, [userId])
 
   useEffect(() => {
     const init = async () => {
@@ -30,13 +40,7 @@ export default function DashboardPage() {
       }
 
       setUserId(data.user.id)
-
-      const { data: feedbackData } = await supabase
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (feedbackData) setFeedbacks(feedbackData)
+      await fetchFeedbacks()
       setLoading(false)
     }
 
@@ -69,7 +73,7 @@ export default function DashboardPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [router])
+  }, [router, fetchFeedbacks])
 
   const handleSubmit = async () => {
     if (!userId) return
@@ -88,6 +92,13 @@ export default function DashboardPage() {
     setDescription('')
   }
 
+  useEffect(() => {
+    if (!userId) return
+    const interval = setInterval(() => {
+      fetchFeedbacks()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [userId, fetchFeedbacks])
 
   if (loading) return <p className="loading">Loading...</p>
 
