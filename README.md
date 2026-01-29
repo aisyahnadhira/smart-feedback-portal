@@ -120,4 +120,8 @@ This app uses the **Postgres Changes** channel in Supabase to:
 - Status/category/priority changes are reflected in the UI in real time  
 - Web URL : https://smart-feedback-portal-311qpabss-aisyahnadhiras-projects.vercel.app/
 
+- Demo login credentials:
+  - user1: `user1@gmail.com` / password: `useruser`
+  - user2: `user2@gmail.com` / password: `useruser`
+
 - Demo video: [Smart Feedback Portal Realtime Demo](https://jam.dev/c/9aa8b848-a29a-418f-8c97-85e39f4cba62)
