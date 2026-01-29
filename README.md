@@ -97,6 +97,13 @@ Enable **RLS** on the `feedback` table in Supabase, then create these policies:
 
 ---
 
+### n8n workflow
+
+The n8n automation workflow JSON is included in this repository under the `workflows/` folder (e.g. `workflows/My workflow.json`).  
+You can import it into n8n via **Workflow -> Import from File**.
+
+---
+
 ### Real‑time updates
 
 This app uses the **Postgres Changes** channel in Supabase to:
@@ -111,5 +118,6 @@ This app uses the **Postgres Changes** channel in Supabase to:
 - User logs in  
 - User submits new feedback, which immediately appears in the list  
 - Status/category/priority changes are reflected in the UI in real time  
+- Web URL : https://smart-feedback-portal-311qpabss-aisyahnadhiras-projects.vercel.app/
 
 - Demo video: [Smart Feedback Portal Realtime Demo](https://jam.dev/c/9aa8b848-a29a-418f-8c97-85e39f4cba62)

@@ -1,0 +1,207 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        432
+      ],
+      "id": "15940df4-b08a-4b05-a0cc-76df5c26863e",
+      "name": "Webhook",
+      "webhookId": "38cfd7eb-1ffd-4450-977b-51ede331301e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1873128c-f41d-4677-8416-ac3e826871cf",
+              "leftValue": "={{ $json.body.record.description }}",
+              "rightValue": "urgent",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "378246d6-385e-4b86-8510-fef3cc19400f",
+              "leftValue": "={{ $json.body.record.description }}",
+              "rightValue": "broken",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "id-3",
+              "leftValue": "={{ $json.body.record.description }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -192,
+        432
+      ],
+      "id": "df529655-a0f9-45a9-bd12-dd5aaa374a11",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "feedback",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.record.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "priority",
+              "fieldValue": "High"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "Bug"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "Processed"
+            }
+          ]
+        }
+      },
+      "id": "22309ed9-e150-448e-9c5d-274af7f7cb62",
+      "name": "Update High Priority Bug",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        48,
+        336
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "8nhEbq08omvPw96l",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "feedback",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.record.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "priority",
+              "fieldValue": "Low"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "General"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "Processed"
+            }
+          ]
+        }
+      },
+      "id": "3284d751-2548-4e7b-bf35-5ed33309f5b9",
+      "name": "Update Low Priority General",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        48,
+        528
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "8nhEbq08omvPw96l",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update High Priority Bug",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Low Priority General",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "a27d0c79-7418-4187-9c43-f1e3fedead54",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a5838eae569c6ef2529556195fb6499e9b97d123924b314d388a306c3d067771"
+  },
+  "id": "ZOryZhKnEsvGXc3oXFEWW",
+  "tags": []
+}
