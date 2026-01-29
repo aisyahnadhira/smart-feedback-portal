@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Smart Feedback Portal
 
-## Getting Started
+A simple feedback portal built with **Next.js 16 App Router** and **Supabase**, featuring authentication and real‑time updates for feedback status.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Prerequisites
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Node.js**: v22.x or newer  
+- **Package manager**: `npm`  
+- **Supabase account**: project created with a `feedback` table  
+- **Git**: for cloning the repository  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Setup & Installation
 
-## Learn More
+1. **Clone the repository**
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   git clone https://github.com/aisyahnadhira/smart-feedback-portal.git
+   cd smart-feedback-portal
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Install dependencies**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+3. **Configure environment variables**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Create a `.env.local` file in the project root:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   ```
+
+   **Example** (do not commit real keys to a public repo):
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ```
+
+4. **Run the development server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Then open `http://localhost:3000` in your browser.
+
+---
+
+### Database Schema & RLS Policies (Supabase)
+
+#### `feedback` table
+
+Example table structure:
+
+- **id**: `uuid` (primary key, default `uuid_generate_v4()`)
+- **user_id**: `uuid` (references `auth.users.id`)
+- **title**: `text`
+- **description**: `text`
+- **status**: `text` (e.g. `Pending`, `Processed`)
+- **category**: `text` (nullable)
+- **priority**: `text` (nullable)
+- **created_at**: `timestamp` (default `now()`)
+
+#### RLS policies
+
+Enable **RLS** on the `feedback` table in Supabase, then create these policies:
+
+1. **Insert: users can insert their own feedback**
+   - **Policy name**: `Users can insert their own feedback`
+   - **Action**: `INSERT`
+   - **Target**: `feedback`
+   - **With check**: `auth.uid() = user_id`
+
+2. **Select: users can read only their own feedback**
+   - **Policy name**: `Users can select only their feedback`
+   - **Action**: `SELECT`
+   - **Using expression**: `auth.uid() = user_id`
+
+3. **Update by automation (n8n / service role)**
+   - **Policy name**: `Service role can update feedback`
+   - **Action**: `UPDATE`
+   - **Role**: `service_role` (via service role API key)
+   - **Expression**: `true`
+
+#### RLS screenshot
+
+- RLS policy screenshot: [Supabase RLS policies for `feedback`](https://jam.dev/c/56dea02e-f6ad-4730-94f5-6df95f601ac3)  
+  _Shows the insert/select/update policies described above._
+
+---
+
+### Real‑time updates
+
+This app uses the **Postgres Changes** channel in Supabase to:
+
+- **INSERT events** on `public.feedback`: push new feedback into the user’s list in real time  
+- **UPDATE events** on `public.feedback`: update status/category/priority in the UI without page reload  
+
+---
+
+### Demo video
+
+- User logs in  
+- User submits new feedback, which immediately appears in the list  
+- Status/category/priority changes are reflected in the UI in real time  
+
+- Demo video: [Smart Feedback Portal Realtime Demo](https://jam.dev/c/9aa8b848-a29a-418f-8c97-85e39f4cba62)
